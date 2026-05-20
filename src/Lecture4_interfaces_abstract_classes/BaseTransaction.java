@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Calendar;
 
-public abstract class BaseTransaction implements TransactionInterface {
+public class BaseTransaction implements TransactionInterface {
     private final int amount;
     private final Calendar date;
     private final String transactionID;
@@ -45,7 +45,16 @@ public abstract class BaseTransaction implements TransactionInterface {
     public String getTransactionID(){
         return  transactionID;
     }
-    // Method to print a transaction receipt or details
-    public abstract void printTransactionDetails();
-    public abstract void apply(BankAccount ba);
+   // Concrete method to print a transaction receipt or details
+    public void printTransactionDetails() {
+        System.out.println("Base Transaction Details:");
+        System.out.println("  Amount: " + amount);
+        System.out.println("  Date: " + date.getTime());
+        System.out.println("  Transaction ID: " + transactionID);
+    }
+
+    // Concrete apply method — subclasses will override this
+    public void apply(BankAccount ba) throws InsufficientFundsException {
+    System.out.println("Base apply() — no specific transaction action taken.");
+}
 }

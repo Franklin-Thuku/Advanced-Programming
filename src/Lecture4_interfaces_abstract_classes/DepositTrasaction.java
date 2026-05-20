@@ -18,10 +18,12 @@ public class DepositTrasaction extends BaseTransaction {
     }
 
     // Method to print a transaction receipt or details
+    @override
     public void printTransactionDetails(){
         System.out.println("Deposit Trasaction: "+this.toString());
     }
 
+    @Override
     public void apply(BankAccount ba){
         double curr_balance = ba.getBalance();
         double new_balance = curr_balance + getAmount();

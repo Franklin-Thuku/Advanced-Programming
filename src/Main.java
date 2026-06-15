@@ -1,5 +1,5 @@
 import Lecture1_adt.*; // Import all classes from Lecture1_adt package to be used in this client code
-import Lecture4_interfaces_abstract_classes.*;
+import Lecture4_interfaces_abstract_classes.*; // Import Lecture 4 assignment files
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -9,7 +9,7 @@ import java.util.List;
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 /*
-* Client Code for accessing the Lecture1_adt.TransactionInterface.java module
+ * Client Code for accessing the Lecture1_adt.TransactionInterface.java module
  */
 public class Main {
 
@@ -57,8 +57,8 @@ public class Main {
         System.out.println("Lecture1_adt.TransactionInterface Date: \t "+modified_t.getDate().getTime());
 
         /* Please note that Although we have solved the problem of Transaction1
-        * And client code can no longer use the dot (.) operator to directly access the data
-        * There is still some exposure especially if we pass an object of a previous Transaction2 to create a new Transaction2 object
+         * And client code can no longer use the dot (.) operator to directly access the data
+         * There is still some exposure especially if we pass an object of a previous Transaction2 to create a new Transaction2 object
          */
 
     }
@@ -144,154 +144,75 @@ public class Main {
         // Please Take a look at all the 12 transaction now and compare with the outputs of the Transaction3 class
     }
 
-    public static void testDeposit() {
-        System.out.println("\nTEST: Deposit Transaction");
+    /**
+     * Question 4: Client Code to test Assignment 1 functionality
+     */
+    public static void testAssignmentOne() {
+        System.out.println("========== RUNNING ASSIGNMENT 1 TEST CODE ==========");
 
-        BankAccount ba = new BankAccount(1000);
-        Calendar date = new GregorianCalendar();
-        DepositTrasaction deposit = new DepositTrasaction(500, date);
+        // 1. Setup account and common date object
+        BankAccount account = new BankAccount(5000.0);
+        Calendar now = new GregorianCalendar();
 
-        System.out.println("Balance before deposit: " + ba.getBalance());
-        deposit.printTransactionDetails();
+        System.out.println("Initial Bank Account Balance: " + account.getBalance());
 
-        try {
-            deposit.apply(ba);
-        } catch (InsufficientFundsException e) {
-            System.out.println("Deposits don't throw this.");
-        }
+        // 2. Instantiate Subclass Objects
+        DepositTrasaction deposit = new DepositTrasaction(2000, now);
+        WithdrawalTransaction withdrawal1 = new WithdrawalTransaction(3000, now);
+        WithdrawalTransaction withdrawal2 = new WithdrawalTransaction(6000, now); // Will cause exception
+        WithdrawalTransaction partialWithdrawal = new WithdrawalTransaction(8000, now); // For overloaded test
 
-        System.out.println("Balance after deposit: " + ba.getBalance());
-    }
-
-    public static void testWithdrawalSuccess() {
-        System.out.println("\nTEST: Successful Withdrawal");
-
-        BankAccount ba = new BankAccount(1000);
-        Calendar date = new GregorianCalendar();
-        WithdrawalTransaction withdrawal = new WithdrawalTransaction(300, date);
-
-        System.out.println("Balance before withdrawal: " + ba.getBalance());
-        withdrawal.printTransactionDetails();
+        // 3. Type casting / Mapping subtype objects to the base type object (Upcasting)
+        BaseTransaction baseDeposit = (BaseTransaction) deposit;
+        BaseTransaction baseWithdrawal1 = (BaseTransaction) withdrawal1;
+        BaseTransaction baseWithdrawal2 = (BaseTransaction) withdrawal2;
 
         try {
-            withdrawal.apply(ba);
+            // 4. Apply Deposit via Base type mapping
+            System.out.println("\n--- Executing Deposit ---");
+            baseDeposit.apply(account);
+            baseDeposit.printTransactionDetails();
+            System.out.println("Balance after Deposit: " + account.getBalance());
+
+            // 5. Apply valid Withdrawal via Base type mapping
+            System.out.println("\n--- Executing Valid Withdrawal ---");
+            baseWithdrawal1.apply(account);
+            baseWithdrawal1.printTransactionDetails();
+            System.out.println("Balance after Withdrawal 1: " + account.getBalance());
+
+            // 6. Test Reversal on the successful withdrawal
+            System.out.println("\n--- Testing Reversal on Withdrawal 1 ---");
+            withdrawal1.reverse();
+            System.out.println("Balance after Reversal: " + account.getBalance());
+
+            // 7. Apply invalid Withdrawal (Should throw InsufficientFundsException)
+            System.out.println("\n--- Executing Invalid Withdrawal (Expect Exception) ---");
+            baseWithdrawal2.apply(account); // This line will jump to the catch block
+
         } catch (InsufficientFundsException e) {
-            System.out.println("Should NOT happen: " + e.getMessage());
+            System.out.println("Successfully caught handled exception: " + e.getMessage());
         }
 
-        System.out.println("Balance after withdrawal: " + ba.getBalance());
+        // 8. Test Overloaded apply method (Partial withdrawal scenario)
+        System.out.println("\n--- Executing Overloaded Apply (Partial Withdrawal Option) ---");
+        System.out.println("Current Account Balance before partial: " + account.getBalance());
+
+        // Attempting to withdraw 8000 when balance is less than that but greater than 0
+        partialWithdrawal.apply(account, true);
+        partialWithdrawal.printTransactionDetails();
+        System.out.println("Final Account Balance after partial withdrawal loop: " + account.getBalance());
+
+        System.out.println("====================================================");
     }
-
-    public static void testWithdrawalException() {
-        System.out.println("\nTEST: Insufficient Funds Exception");
-
-        BankAccount ba = new BankAccount(100);
-        Calendar date = new GregorianCalendar();
-        WithdrawalTransaction withdrawal = new WithdrawalTransaction(500, date);
-
-        System.out.println("Balance: " + ba.getBalance());
-        System.out.println("Attempting to withdraw: " + withdrawal.getAmount());
-
-        try {
-            withdrawal.apply(ba);
-        } catch (InsufficientFundsException e) {
-            System.out.println("Exception: " + e.getMessage());
-            System.out.println("Deficit amount: " + e.getDeficitAmount());
-        }
-
-        System.out.println("Balance after failed attempt: " + ba.getBalance());
-    }
-
-    public static void testWithdrawalAvailableBalance() {
-        System.out.println("\nTEST: Overloaded apply() — Available Balance");
-
-        BankAccount ba = new BankAccount(150);
-        Calendar date = new GregorianCalendar();
-        WithdrawalTransaction withdrawal = new WithdrawalTransaction(500, date);
-
-        System.out.println("Balance: " + ba.getBalance());
-        System.out.println("Attempting to withdraw: " + withdrawal.getAmount());
-
-        withdrawal.apply(ba, true);
-
-        System.out.println("Balance after: " + ba.getBalance());
-        System.out.println("Amount not withdrawn: " + withdrawal.getAmountNotWithdrawn());
-        withdrawal.printTransactionDetails();
-    }
-
-    public static void testReverse() {
-        System.out.println("\nTEST: Reverse Withdrawal");
-
-        BankAccount ba = new BankAccount(1000);
-        Calendar date = new GregorianCalendar();
-        WithdrawalTransaction withdrawal = new WithdrawalTransaction(400, date);
-
-        System.out.println("Original balance: " + ba.getBalance());
-
-        try {
-            withdrawal.apply(ba);
-        } catch (InsufficientFundsException e) {
-            System.out.println("Should NOT happen: " + e.getMessage());
-        }
-
-        System.out.println("Balance after withdrawal: " + ba.getBalance());
-
-        boolean reversed = withdrawal.reverse(ba);
-        System.out.println("Reversed? " + reversed);
-        System.out.println("Balance after reversal: " + ba.getBalance());
-
-        boolean reversedAgain = withdrawal.reverse(ba);
-        System.out.println("Reversed again? " + reversedAgain);
-    }
-
-    public static void testPolymorphism() {
-        System.out.println("\nTEST: Polymorphism");
-
-        BankAccount ba1 = new BankAccount(1000);
-        BankAccount ba2 = new BankAccount(500);
-        Calendar date = new GregorianCalendar();
-
-        DepositTrasaction deposit = new DepositTrasaction(200, date);
-        WithdrawalTransaction withdrawal = new WithdrawalTransaction(300, date);
-
-        BaseTransaction bt1 = deposit;
-        BaseTransaction bt2 = withdrawal;
-
-        System.out.println("\nApplying via BaseTransaction reference");
-
-        try {
-            bt1.apply(ba1);
-            System.out.println("After deposit (via base ref): " + ba1.getBalance());
-
-            bt2.apply(ba2);
-            System.out.println("After withdrawal (via base ref): " + ba2.getBalance());
-        } catch (InsufficientFundsException e) {
-            System.out.println("Exception: " + e.getMessage());
-        }
-
-        System.out.println("\nDynamic Binding Demo");
-        BaseTransaction[] transactions = {deposit, withdrawal};
-        for (BaseTransaction bt : transactions) {
-            System.out.print("Transaction type: ");
-            bt.printTransactionDetails();
-        }
-    }
-
 
     public static void main(String[] args) {
-        // ===== OLD TESTS (from Lecture1_adt) =====
+        // Run assignment test execution
+        testAssignmentOne();
+
+        // Uncomment the following lines to run historical lecture tests if needed
         // testTransaction1();
         // testTransaction2();
         // testTransaction3();
         // testTransaction4();
-
-        // ===== NEW TESTS (Assignment 1) =====
-        testDeposit();
-        testWithdrawalSuccess();
-        testWithdrawalException();
-        testWithdrawalAvailableBalance();
-        testReverse();
-        testPolymorphism();
-
     }
 }

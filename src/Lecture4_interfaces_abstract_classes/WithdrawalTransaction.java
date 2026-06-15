@@ -1,12 +1,13 @@
 package Lecture4_interfaces_abstract_classes;
 
 import org.jetbrains.annotations.NotNull;
-
 import java.util.Calendar;
 
 public class WithdrawalTransaction extends BaseTransaction {
-     private boolean applied = false;   
-    private boolean reversed = false;  
+    private BankAccount appliedAccount = null;
+    private boolean isApplied = false;
+    private double shortfallRecord = 0.0;
+
     public WithdrawalTransaction(int amount, @NotNull Calendar date) {
         super(amount, date);
     }
@@ -19,82 +20,73 @@ public class WithdrawalTransaction extends BaseTransaction {
         }
     }
 
-    // Method to reverse the transaction
-    public boolean reverse(BankAccount ba) {
-         if (applied && !reversed) {
-            double curr_balance = ba.getBalance();
-            double new_balance = curr_balance + getAmount();
-            ba.setBalance(new_balance);
-            reversed = true;
-            System.out.println("Withdrawal reversed. Amount returned: " + getAmount());
-        return true;
-         }
-         else if (reversed) {
-            System.out.println("Transaction has already been reversed.");
-            return false;
-        } else {
-            System.out.println("Transaction was never applied, cannot reverse.");
-            return false;
+    // Question 2: Reversal logic restores the account balance to its original amount
+    public boolean reverse() {
+        if (isApplied && appliedAccount != null) {
+            double currentBalance = appliedAccount.getBalance();
+            // Restore original amount (current balance + what was successfully withdrawn)
+            double restoredBalance = currentBalance + (getAmount() - shortfallRecord);
+            appliedAccount.setBalance(restoredBalance);
+            isApplied = false; // Reset state
+            System.out.println("Withdrawal transaction reversed successfully.");
+            return true;
         }
-    } // return true if reversal was successful
+        System.out.println("Reversal failed: Transaction has not been applied yet.");
+        return false;
+    }
 
     // Method to print a transaction receipt or details
     @Override
     public void printTransactionDetails() {
-        System.out.println("Withdrawal Transaction: " + this.toString());
-        System.out.println("  Applied: " + applied);
-        System.out.println("  Reversed: " + reversed);
-        if (amountNotWithdrawn > 0) {
-            System.out.println("  Amount not withdrawn: " + amountNotWithdrawn);
+        System.out.println("--- Withdrawal Transaction ---");
+        System.out.println("Transaction ID: " + getTransactionID());
+        System.out.println("Date: " + getDate().getTime());
+        System.out.println("Amount Requested: " + getAmount());
+        if (shortfallRecord > 0) {
+            System.out.println("Shortfall (Not Withdrawn): " + shortfallRecord);
         }
     }
 
-    /*
-    Oportunity for assignment: implementing different form of withdrawal
-     */
-     @Override
+    // Question 3: Standard apply using the throws keyword
+    @Override
     public void apply(BankAccount ba) throws InsufficientFundsException {
         double curr_balance = ba.getBalance();
-
         if (curr_balance >= getAmount()) {
             double new_balance = curr_balance - getAmount();
             ba.setBalance(new_balance);
-            applied = true;
-            System.out.println("Withdrawal of " + getAmount() + " applied. New balance: " + new_balance);
+            this.appliedAccount = ba;
+            this.isApplied = true;
+            this.shortfallRecord = 0.0;
         } else {
-            double deficit = getAmount() - curr_balance;
-            throw new InsufficientFundsException(
-                "Insufficient funds! Balance: " + curr_balance + ", needed: " + getAmount(), deficit);
+            throw new InsufficientFundsException("Insufficient funds to complete the withdrawal of " + getAmount());
         }
     }
 
-    public void apply(BankAccount ba, boolean withdrawAvailable) {
-        double curr_balance = ba.getBalance();
-
+    // Question 3: Overloaded apply handling 0 < balance < withdrawal amount using try...catch...finally
+    public void apply(BankAccount ba, boolean partialWithdrawalAllowed) {
         try {
-            apply(ba);
-        } catch (InsufficientFundsException e) {
-            System.out.println("Exception caught: " + e.getMessage());
-
-            if (curr_balance > 0 && withdrawAvailable) {
-                amountNotWithdrawn = getAmount() - curr_balance;
-                ba.setBalance(0);
-                applied = true;
-                System.out.println("Withdrew available balance: " + curr_balance);
-                System.out.println("Amount not withdrawn (shortfall): " + amountNotWithdrawn);
+            double curr_balance = ba.getBalance();
+            if (curr_balance < getAmount()) {
+                // Check if balance is greater than 0 for partial withdrawal
+                if (curr_balance > 0) {
+                    shortfallRecord = getAmount() - curr_balance;
+                    ba.setBalance(0.0); // Withdraw all available balance
+                    this.appliedAccount = ba;
+                    this.isApplied = true;
+                    System.out.println("Partial withdrawal executed. Balance set to 0. Shortfall: " + shortfallRecord);
+                } else {
+                    // Trigger exception block manually if balance is 0 or less
+                    throw new InsufficientFundsException("Account balance is zero or negative. Cannot withdraw.");
+                }
             } else {
-                System.out.println("No withdrawal made. Balance is 0.");
+                // If funds are completely sufficient, proceed normally via standard apply
+                apply(ba);
             }
+        } catch (InsufficientFundsException e) {
+            System.out.println("Caught Exception inside overloaded apply: " + e.getMessage());
+            this.isApplied = false;
         } finally {
-            System.out.println("Withdrawal attempt completed");
+            System.out.println("Transaction processing attempt finished for Transaction ID: " + getTransactionID());
         }
     }
-
-    public double getAmountNotWithdrawn() {
-        return amountNotWithdrawn;
-    }
-    /*
-    Assignment 1 Q3: Write the Reverse method - a method unique to the WithdrawalTransaction Class
-     */
 }
-
